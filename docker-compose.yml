@@ -19,3 +19,12 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: your-password
     ports:
       - "27017:27017"
+
+  mongodbNA:
+    image: mongo:latest
+    container_name: mongo-db-na
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: your-username
+      MONGO_INITDB_ROOT_PASSWORD: your-password
+    ports:
+      - "27018:27017"
