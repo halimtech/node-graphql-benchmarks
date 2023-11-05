@@ -58,7 +58,7 @@ if (!choices.length) {
     dataArray.push(JSON.parse(content.toString()));
   });
   dataArray.sort(
-    (a, b) => parseFloat(b.requests.mean) - parseFloat(a.requests.mean),
+    (a, b) => parseFloat(b.requests?.mean) - parseFloat(a.requests?.mean),
   );
 
   dataArray.forEach((data, i) => {
