@@ -29,6 +29,7 @@
   "dependencies": {
     "@benzene/http": "^0.0.3",
     "@graphql-tools/schema": "^7.1.2",
+    "@koa/router": "^12.0.1",
     "apollo-opentracing": "^2.1.0",
     "apollo-server-express": "^2.19.2",
     "apollo-server-fastify": "^3.0.0-alpha.3",

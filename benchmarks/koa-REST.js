@@ -1,11 +1,14 @@
-const fastify = require("fastify")({});
+const Koa = require("koa");
+const Router = require("@koa/router");
 const mongoose = require("mongoose");
 const md5 = require("md5");
-
-// Import necessary modules and functions
 const pg = require("pg");
 const { Client } = pg;
 
+const app = new Koa();
+const router = new Router();
+
+// Import necessary modules and functions
 const pgClient = new Client({
   user: "your-username",
   password: "your-password",
@@ -55,7 +58,8 @@ const ProductUS = mongooseUS.model("Product", {
   region: String,
 });
 
-fastify.get("/users", async (request, reply) => {
+// Define your REST endpoints to emulate GraphQL queries and mutations
+router.get("/users", async (ctx) => {
   const queryResult = await pgClient.query("SELECT * FROM users");
   const users = queryResult.rows.map((user) => ({
     id: user.id,
@@ -67,52 +71,54 @@ fastify.get("/users", async (request, reply) => {
       city: user.city,
     },
   }));
-  reply.send(users);
+  ctx.body = users;
 });
 
-fastify.get("/user/:id", async (request, reply) => {
-  const userId = request.params.id;
+router.get("/user/:id", async (ctx) => {
+  const userId = ctx.params.id;
   const queryResult = await pgClient.query(
     "SELECT * FROM users WHERE id = $1",
     [userId],
   );
   if (queryResult.rows.length === 0) {
-    reply.code(404).send({ error: "User not found" });
+    ctx.status = 404;
+    ctx.body = { error: "User not found" };
+  } else {
+    const user = queryResult.rows[0];
+    ctx.body = {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      location: {
+        latitude: user.latitude,
+        longitude: user.longitude,
+        city: user.city,
+      },
+    };
   }
-  const user = queryResult.rows[0];
-  reply.send({
-    id: user.id,
-    username: user.username,
-    email: user.email,
-    location: {
-      latitude: user.latitude,
-      longitude: user.longitude,
-      city: user.city,
-    },
-  });
 });
 
-fastify.get("/products", async (request, reply) => {
+router.get("/products", async (ctx) => {
   const productsEU = await ProductEU.find().exec();
   const productsUS = await ProductUS.find().exec();
   const products = [...productsEU, ...productsUS];
-  reply.send(products);
+  ctx.body = products;
 });
 
-fastify.post("/createUser", async (request, reply) => {
+router.post("/createUser", async (ctx) => {
   // Emulate the "createUser" mutation
-  const { username, email, latitude, longitude, city } = request.body;
+  const { username, email, latitude, longitude, city } = ctx.request.body;
   const queryResult = await pgClient.query(
     "INSERT INTO users (username, email, latitude, longitude, city) VALUES ($1, $2, $3, $4, $5) RETURNING *",
     [username, email, latitude, longitude, city],
   );
   const newUser = queryResult.rows[0];
-  reply.send(newUser);
+  ctx.body = newUser;
 });
 
-fastify.post("/createProduct", async (request, reply) => {
+router.post("/createProduct", async (ctx) => {
   // Emulate the "createProduct" mutation
-  const { name, description, region } = request.body;
+  const { name, description, region } = ctx.request.body;
   let Product;
   region === "EUROPE" ? (Product = ProductEU) : (Product = ProductUS);
   const product = new Product({
@@ -122,11 +128,9 @@ fastify.post("/createProduct", async (request, reply) => {
     // Include other product fields as needed
   });
   await product.save();
-  reply.send(product);
+  ctx.body = product;
 });
 
-fastify.listen(4001, (err, address) => {
-  if (err) {
-    process.exit(1);
-  }
-});
+app.use(router.routes()).use(router.allowedMethods());
+
+app.listen(4001);
