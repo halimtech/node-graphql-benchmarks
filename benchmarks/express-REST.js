@@ -13,13 +13,13 @@ const pgClient = new Client({
   user: "your-username",
   password: "your-password",
   database: "your-database-name",
-  host: "localhost",
+  host: "127.0.0.1",
   port: 5432,
 });
 pgClient.connect();
 
 const mongooseEU = mongoose.createConnection(
-  "mongodb://your-username:your-password@localhost:27017/",
+  "mongodb://your-username:your-password@127.0.0.1:27017/",
   {
     useNewUrlParser: true,
     useUnifiedTopology: true,
@@ -27,7 +27,7 @@ const mongooseEU = mongoose.createConnection(
 );
 
 const mongooseUS = mongoose.createConnection(
-  "mongodb://your-username:your-password@localhost:27018/",
+  "mongodb://your-username:your-password@127.0.0.1:27018/",
   {
     useNewUrlParser: true,
     useUnifiedTopology: true,
@@ -61,17 +61,28 @@ const ProductUS = mongooseUS.model("Product", {
 // Define your REST endpoints to emulate GraphQL queries and mutations
 app.get("/users", async (req, res) => {
   const queryResult = await pgClient.query("SELECT * FROM users");
-  const users = queryResult.rows.map((user) => ({
-    id: user.id,
-    username: user.username,
-    email: user.email,
-    location: {
-      latitude: user.latitude,
-      longitude: user.longitude,
-      city: user.city,
-    },
-  }));
-  res.json(users);
+  const users = queryResult.rows.map(async (user) => {
+    const productsEU = await ProductEU.find({ userId: user.id }).exec();
+    const productsUS = await ProductUS.find({ userId: user.id }).exec();
+    const products = [...productsEU, ...productsUS];
+
+    return {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      location: {
+        latitude: user.latitude,
+        longitude: user.longitude,
+        city: user.city,
+      },
+      products: products.filter((product) => product.userId === user.id),
+    };
+  });
+
+  // Wait for all user queries to complete
+  const usersWithProducts = await Promise.all(users);
+
+  res.json(usersWithProducts);
 });
 
 app.get("/user/:id", async (req, res) => {
