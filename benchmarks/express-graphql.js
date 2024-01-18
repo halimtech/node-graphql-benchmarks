@@ -12,7 +12,7 @@ app.use(
   graphqlUploadExpress(),
   graphqlHTTP({
     schema,
-    graphiql: true,
+    graphiql: false,
   }),
 );
 app.listen(4001);

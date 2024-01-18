@@ -71,7 +71,7 @@ fastify.get("/users", async (request, reply) => {
         longitude: user.longitude,
         city: user.city,
       },
-      products: products.filter((product) => product.userId === user.id),
+      products: products,
     };
   });
 

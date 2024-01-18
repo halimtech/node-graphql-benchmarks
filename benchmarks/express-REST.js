@@ -75,7 +75,7 @@ app.get("/users", async (req, res) => {
         longitude: user.longitude,
         city: user.city,
       },
-      products: products.filter((product) => product.userId === user.id),
+      products: products,
     };
   });
 

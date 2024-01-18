@@ -75,7 +75,7 @@ router.get("/users", async (ctx) => {
         longitude: user.longitude,
         city: user.city,
       },
-      products: products.filter((product) => product.userId === user.id),
+      products: products,
     };
   });
 
